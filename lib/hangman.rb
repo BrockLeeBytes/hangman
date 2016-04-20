@@ -1,11 +1,13 @@
+require 'yaml'
+
 class Word
 
-  attr_accessor :answer
+  attr_reader :random
 
-  def create_answer
+  def create_random_word
   	open_word_list
   	reduce_word_list(@word_list, 5, 12)
-  	@answer = random_word(@word_list)
+  	@random = random_word(@word_list)
   end
 
   def open_word_list
@@ -25,11 +27,12 @@ end
 
 class Game
 
-  attr_reader :guess, :hidden_word, :incorrect_guesses
+  attr_reader :guess, :hidden_word, :incorrect_guesses, :answer
 
-  def initialize
+  def initialize(answer)
   	@incorrect_guesses = []
   	@guess = " "
+    @answer = answer
   end
 
   def player_guess
@@ -37,6 +40,12 @@ class Game
   	puts "\n"
   	@guess = gets.chomp.downcase
   end
+
+  def valid_guess?(guess)
+    if guess.length == 1 && ("a".."z").include?(guess)
+      return true
+    end
+  end        
 
   def create_hidden_word(answer)
     @hidden_word = Array.new(answer.length, "*")
@@ -171,31 +180,60 @@ class Screen
   	puts @pics[incorrect_guesses.length]
   end
 
+end 
+
+def intro
+  puts "Welcome to Hangman. Would you like to load a previously saved game? (y/n)"
+  puts "\n"
+end
+
+def load_game
+  yaml = File.open("game_save.yaml", "r") {|file| file.read}
+  YAML::load(yaml)
+end
+
+def save_game
+  yaml = YAML::dump(game)
+  File.open("game_save.yaml", "w") {|file| file.write yaml}
 end
 
 def game_script
-  word = Word.new
-  game = Game.new
+  word = Word.new  
+  word.create_random_word
+  game = Game.new(word.random)
+  game.create_hidden_word(game.answer)
   screen = Screen.new
 
-  word.create_answer
-  game.create_hidden_word(word.answer)
+  intro
+  yes_or_no = gets.chomp.downcase
+  if yes_or_no == "y"
+    game = load_game
+  end
 
   until game.incorrect_guesses.length == 6
-  	screen.display(game.hidden_word, game.guess, game.incorrect_guesses)
-  	game.player_guess
-  	game.check_guess(word.answer, game.guess)
-  	if game.win?(word.answer, game.hidden_word)
-  		screen.display(game.hidden_word, game.guess, game.incorrect_guesses)
-  		game.win_message
-  		break
-  	end
+    screen.display(game.hidden_word, game.guess, game.incorrect_guesses)
+    game.player_guess
+    if game.guess == "save"
+      save_game(game)
+      break
+    elsif game.valid_guess?(game.guess)
+      game.check_guess(game.answer, game.guess)
+      if game.win?(game.answer, game.hidden_word)
+      screen.display(game.hidden_word, game.guess, game.incorrect_guesses)
+      game.win_message
+      break
+      end
+    else
+      puts "Sorry that was an invaild guess. Try again."
+    end
   end
+
   if game.incorrect_guesses.length == 6
-  	screen.display(game.hidden_word, game.guess, game.incorrect_guesses)
-  	game.lose_message
-  	puts "The answer was #{word.answer}"
+    screen.display(game.hidden_word, game.guess, game.incorrect_guesses)
+    game.lose_message
+    puts "The answer was #{game.answer}"
   end
-end
+
+end     
 
 game_script
