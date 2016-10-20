@@ -1,0 +1,16 @@
+--- !ruby/object:Game
+incorrect_guesses:
+- a
+guess: save
+answer: bestridden
+hidden_word:
+- b
+- e
+- "*"
+- "*"
+- "*"
+- "*"
+- "*"
+- "*"
+- e
+- "*"

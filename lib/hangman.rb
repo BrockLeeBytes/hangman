@@ -192,7 +192,7 @@ def load_game
   YAML::load(yaml)
 end
 
-def save_game
+def save_game(game)
   yaml = YAML::dump(game)
   File.open("game_save.yaml", "w") {|file| file.write yaml}
 end
